@@ -6,7 +6,8 @@ appears in the title, so word overlap cannot help.
 
 Differences between methods come with a 95% paired bootstrap interval over questions.
 
-Usage:  .venv/bin/python evaluate.py [--split test] [--model models/finetuned]
+Usage:  .venv/bin/python evaluate.py [--split test] [--model models/final]
+        .venv/bin/python evaluate.py --gold            # hand-checked test questions (label.py)
         .venv/bin/python evaluate.py --check
 """
 import argparse
@@ -24,9 +25,13 @@ TOKEN_RE = re.compile(r"[a-z0-9]+")
 BASE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
-def load(split):
+def load(split, gold=False):
+    """gold=True: only hand-checked test questions, with the functions a person marked correct as labels."""
     corpus = [json.loads(l) for l in (ROOT / "data" / "corpus.jsonl").open()]
     qs = [json.loads(l) for l in (ROOT / "data" / "questions.jsonl").open()]
+    if gold:
+        judged = {g["id"]: g["correct"] for g in map(json.loads, (ROOT / "data" / "gold.jsonl").open())}
+        return corpus, [{**q, "labels": judged[q["id"]]} for q in qs if q["id"] in judged]
     return corpus, [q for q in qs if q["split"] == split]
 
 
@@ -129,12 +134,15 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="test")
     ap.add_argument("--model", action="append", default=[], help="extra embedding model(s) to score")
+    ap.add_argument("--gold", action="store_true", help="score on the hand-checked test questions")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
         check()
         sys.exit()
-    corpus, qs = load(args.split)
+    corpus, qs = load(args.split, args.gold)
+    if args.gold and not args.model:
+        args.model = [str(ROOT / "models" / "final"), "BAAI/bge-base-en-v1.5"]
     queries = [q["title"] for q in qs]
     methods = {"BM25": lambda: rank_bm25(corpus, queries),
                "MiniLM (off the shelf)": lambda: rank_dense(corpus, queries, BASE_MODEL)}
