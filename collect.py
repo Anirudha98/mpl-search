@@ -54,12 +54,15 @@ def get(path, **params):
 
 
 def fetch(pages):
-    # Without an API key the API stops at page 25, so walk two orderings and de-duplicate.
+    # Without an API key the API stops at page 25, so walk several listings and de-duplicate.
+    # The third asks only for questions with an accepted answer, newest first, so every row counts.
+    listings = [("questions", {"sort": "votes"}), ("questions", {"sort": "activity"}),
+                ("search/advanced", {"sort": "creation", "accepted": "True"})]
     seen, questions, answers = set(), [], {}
-    for sort in ("votes", "activity"):
+    for path, extra in listings:
         for page in range(1, min(pages, 25) + 1):
-            data = get("questions", tagged="matplotlib", sort=sort, order="desc",
-                       pagesize=100, page=page, filter="withbody")
+            data = get(path, tagged="matplotlib", order="desc", pagesize=100, page=page,
+                       filter="withbody", **extra)
             for q in data["items"]:
                 if q.get("accepted_answer_id") and q["question_id"] not in seen:
                     seen.add(q["question_id"])
