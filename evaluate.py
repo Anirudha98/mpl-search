@@ -102,12 +102,12 @@ def report(results, qs):
     for name, (r1, r5, m) in results.items():
         print(f"{name:<28}{r1.mean():>7.2f}{r5.mean():>7.2f}{m.mean():>8.2f}{r5[hard].mean():>10.2f}")
     names = list(results)
-    base = results[names[0]][1]
-    print(f"\nR@5 difference vs {names[0]}, 95% paired bootstrap interval:")
-    for name in names[1:]:
-        for label, mask in (("all", slice(None)), ("hard", hard)):
-            d, lo, hi = paired_ci(base[mask], results[name][1][mask])
-            print(f"  {name:<26}{label:<6}{d:+.2f}  [{lo:+.2f}, {hi:+.2f}]")
+    for ref in names[:2]:  # vs keyword search, and vs the embedding model before fine-tuning
+        print(f"\nR@5 difference vs {ref}, 95% paired bootstrap interval:")
+        for name in names[names.index(ref) + 1:]:
+            for label, mask in (("all", slice(None)), ("hard", hard)):
+                d, lo, hi = paired_ci(results[ref][1][mask], results[name][1][mask])
+                print(f"  {name:<26}{label:<6}{d:+.2f}  [{lo:+.2f}, {hi:+.2f}]")
 
 
 def check():

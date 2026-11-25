@@ -4,7 +4,7 @@ Training uses only the train split. Loss is in-batch negatives (MultipleNegative
 each title must score its own document above every other document in the batch. Batches never
 hold the same document twice, or a correct pair would be scored as a negative.
 
-Usage:  .venv/bin/python finetune.py [--epochs 3] [--out models/finetuned]
+Usage:  .venv/bin/python finetune.py [--epochs 5] [--lr 1e-4] [--out models/final]
         .venv/bin/python finetune.py --check     (pair building only, no training)
 """
 import argparse
@@ -56,11 +56,11 @@ def check():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=3)
+    ap.add_argument("--epochs", type=int, default=5)
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--lr", type=float, default=2e-5)
-    ap.add_argument("--out", default=str(ROOT / "models" / "finetuned"))
+    ap.add_argument("--lr", type=float, default=1e-4)
+    ap.add_argument("--out", default=str(ROOT / "models" / "final"))
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if args.check:
